@@ -11,25 +11,25 @@
 // *******************************************************
 
 #include <stdint.h>
+#include <stdbool.h>
+#include <circBufT.h>
 
 
 //*****************************************************************************
 // Constants
 //*****************************************************************************
 #define BUF_SIZE 30
-#define SAMPLE_RATE_HZ 5000
-#define ONE_VOLT 1240
+#define SAMPLE_RATE_HZ 500
+#define ONE_VOLT 1280
 #define ADC_SCALER 38
-
 
 void SysTickIntHandler(void);
 void ADCIntHandler(void);
 void initClock (void);
 void  initADC (void);
 void initDisplay (void);
-void displayMeanVal(uint16_t meanVal, uint32_t count);
 uint8_t getPercentage(uint16_t meanVal);
-uint16_t getMeanAltitude(void);
-
-
+uint16_t getMeanBufferVal(void);
+void initAltitude(void);
+uint16_t getLandedAlt (void);
 #endif /*ALTITUDE_H_*/

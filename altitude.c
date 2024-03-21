@@ -25,22 +25,22 @@
 #include "driverlib/debug.h"
 #include "utils/ustdlib.h"
 #include "circBufT.h"
-#include "OrbitOLED/OrbitOLEDInterface.h"
 #include "altitude.h"
 
 //*****************************************************************************
 // Global variables
 //*****************************************************************************
-static circBuf_t g_inBuffer;		// Buffer of size BUF_SIZE integers (sample values)
-static uint32_t g_ulSampCnt;	// Counter for the interrupts
+static circBuf_t g_inBuffer;        // Buffer of size BUF_SIZE integers (sample values)
+static uint32_t g_ulSampCnt;    // Counter for the interrupts
+static uint16_t landedAlt; // the "helicopter landed" adc value
+static uint16_t maxAlt; // the adc value for 100% helicopter altitude
 
 //*****************************************************************************
 //
 // The interrupt handler for the for SysTick interrupt.
 //
 //*****************************************************************************
-void
-SysTickIntHandler(void)
+void SysTickIntHandler(void)
 {
     //
     // Initiate a conversion
@@ -55,57 +55,33 @@ SysTickIntHandler(void)
 // Writes to the circular buffer.
 //
 //*****************************************************************************
-void
-ADCIntHandler(void)
+void ADCIntHandler(void)
 {
-	uint32_t ulValue;
-	
-	//
-	// Get the single sample from ADC0.  ADC_BASE is defined in
-	// inc/hw_memmap.h
-	ADCSequenceDataGet(ADC0_BASE, 3, &ulValue);
-	//
-	// Place it in the circular buffer (advancing write index)
-	writeCircBuf (&g_inBuffer, ulValue);
-	//
-	// Clean up, clearing the interrupt
-	ADCIntClear(ADC0_BASE, 3);
+    uint32_t ulValue;
+
+    //
+    // Get the single sample from ADC0.  ADC_BASE is defined in
+    // inc/hw_memmap.h
+    ADCSequenceDataGet(ADC0_BASE, 3, &ulValue);
+    //
+    // Place it in the circular buffer (advancing write index)
+    writeCircBuf (&g_inBuffer, ulValue);
+    //
+    // Clean up, clearing the interrupt
+    ADCIntClear(ADC0_BASE, 3);
 }
 
-//*****************************************************************************
-// Initialisation functions for the clock (incl. SysTick), ADC, display
-//*****************************************************************************
-void
-initClock (void)
-{
-    // Set the clock rate to 20 MHz
-    SysCtlClockSet (SYSCTL_SYSDIV_10 | SYSCTL_USE_PLL | SYSCTL_OSC_MAIN |
-                   SYSCTL_XTAL_16MHZ);
-    //
-    // Set up the period for the SysTick timer.  The SysTick timer period is
-    // set as a function of the system clock.
-    SysTickPeriodSet(SysCtlClockGet() / SAMPLE_RATE_HZ);
-    //
-    // Register the interrupt handler
-    SysTickIntRegister(SysTickIntHandler);
-    //
-    // Enable interrupt and device
-    SysTickIntEnable();
-    SysTickEnable();
-}
-
-void 
-initADC (void)
+void initADC (void)
 {
     //
     // The ADC0 peripheral must be enabled for configuration and use.
     SysCtlPeripheralEnable(SYSCTL_PERIPH_ADC0);
-    
+
     // Enable sample sequence 3 with a processor signal trigger.  Sequence 3
     // will do a single sample when the processor sends a signal to start the
     // conversion.
     ADCSequenceConfigure(ADC0_BASE, 3, ADC_TRIGGER_PROCESSOR, 0);
-  
+
     //
     // Configure step 0 on sequence 3.  Sample channel 0 (ADC_CTL_CH0) in
 
@@ -117,90 +93,49 @@ initADC (void)
     // conversion using sequence 3 we will only configure step 0.  For more
     // on the ADC sequences and steps, refer to the LM3S1968 datasheet.
     ADCSequenceStepConfigure(ADC0_BASE, 3, 0, ADC_CTL_CH9 | ADC_CTL_IE |
-                             ADC_CTL_END);    
-                             
+                             ADC_CTL_END);
+
     //
     // Since sample sequence 3 is now configured, it must be enabled.
     ADCSequenceEnable(ADC0_BASE, 3);
-  
+
     //
     // Register the interrupt handler
     ADCIntRegister (ADC0_BASE, 3, ADCIntHandler);
-  
+
     //
     // Enable interrupts for ADC0 sequence 3 (clears any outstanding interrupts)
     ADCIntEnable(ADC0_BASE, 3);
+
+    initCircBuf (&g_inBuffer, BUF_SIZE);
 }
 
-void
-initDisplay (void)
-{
-    // intialise the Orbit OLED display
-    OLEDInitialise ();
+// initilalise altitude vars at the start of program
+// and when left button is pushed
+void initAltitude(void) {
+    landedAlt = getMeanBufferVal();
 }
 
-//*****************************************************************************
-//
-// Function to display the mean ADC value (10-bit value, note) and sample count.
-//
-//*****************************************************************************
-void displayPercentage(uint8_t meanPercentage)
-{
-	char string[17];  // 16 characters across the display
-
-    OLEDStringDraw ("Helicopter Landed", 0, 0);
-	
-    // Form a new string for the line.  The maximum width specified for the
-    //  number field ensures it is displayed right justified.
-    usnprintf (string, sizeof(string), "Altitude = %4d%%", meanPercentage);
-    // Update line on display.
-    OLEDStringDraw (string, 0, 1);
+// read the landed altitude value
+uint16_t getLandedAlt (void) {
+    return landedAlt;
 }
 
+// get the altitude percentage given an adc sample
 uint8_t getPercentage(uint16_t meanVal)
 {
-    return meanVal / ADC_SCALER;
+    return ((landedAlt - meanVal) * 100) / ONE_VOLT;
 }
 
-uint16_t getMeanAltitude(void)
+uint16_t getMeanBufferVal(void)
 {
     uint32_t sum = 0;
     uint16_t i = 0;
     for (i=0; i < BUF_SIZE; i++) {
-        sum = sum + readCircBuf (&g_inBuffer);
+        sum += readCircBuf (&g_inBuffer);
     }
     uint16_t meanVal = (2 * sum + BUF_SIZE) / 2 / BUF_SIZE;
     return meanVal;
 }
 
-int
-main(void) {
-
-	uint16_t i;
-	int32_t sum;
-	
-	initClock ();
-	initADC ();
-	initDisplay ();
-	initCircBuf (&g_inBuffer, BUF_SIZE);
-
-    //
-    // Enable interrupts to the processor.
-    IntMasterEnable();
-
-	while (1)
-	{
-		//
-		// Background task: calculate the (approximate) mean of the values in the
-		// circular buffer and display it, together with the sample number.
-		sum = 0;
-		for (i = 0; i < BUF_SIZE; i++)
-			sum = sum + readCircBuf (&g_inBuffer);
-		// Calculate and display the rounded mean of the buffer contents
-		uint16_t meanVal = getMeanAltitude();
-		displayPercentage (getPercentage(meanVal));
-
-		SysCtlDelay (SysCtlClockGet() / 8);  // Update display at ~ 2 Hz
-	}
-}
 
