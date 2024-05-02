@@ -15,7 +15,7 @@
 // 
 // *******************************************************
 
-#include <buttons.h>
+#include "buttons.h"
 #include <stdint.h>
 #include <stdbool.h>
 #include "inc/hw_memmap.h"

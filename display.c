@@ -24,6 +24,7 @@ void initDisplay (void)
 //*****************************************************************************
 void displayPercentage(int16_t meanPercentage, int32_t yaw_counter)
 {
+    bool negFlag = false;
     char string[17];  // 16 characters across the display
 
     // Form a new string for the line.  The maximum width specified for the
@@ -32,8 +33,20 @@ void displayPercentage(int16_t meanPercentage, int32_t yaw_counter)
 
     // Update line on display.
     OLEDStringDraw (string, 0, 1);
-    int32_t yaw_deg = (yaw_counter * 360) / 448;
-    usnprintf (string, sizeof(string), "Yaw = %4d  " , yaw_deg);
+    int32_t yaw_deg = (yaw_counter * 360 * 100) / 448;
+    int32_t yaw_int = yaw_deg / 100;
+    int32_t yaw_dec = (yaw_deg % 100);
+
+    if (yaw_dec < 0) {
+        yaw_dec *= -1;
+        negFlag = true;
+    }
+
+    usnprintf (string, sizeof(string), "Yaw = %d.%02d    " , yaw_int, yaw_dec);
+
+    if (yaw_int == 0 && negFlag) {
+            usnprintf (string, sizeof(string), "Yaw = -%d.%02d    " , yaw_int, yaw_dec);
+        }
 
     // Update line on display.
     OLEDStringDraw (string, 0, 2);

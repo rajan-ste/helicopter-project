@@ -12,7 +12,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include <circBufT.h>
+#include "circBufT.h"
 
 
 //*****************************************************************************

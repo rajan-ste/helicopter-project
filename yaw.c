@@ -20,6 +20,13 @@ void initYaw(void) {
 }
 
 int32_t getYawPos(void) {
+    if (yaw_counter > WRAPSTEP) {
+        yaw_counter = -WRAPSTEP + (yaw_counter - WRAPSTEP);
+    }
+    if (yaw_counter < -WRAPSTEP) {
+        yaw_counter = WRAPSTEP - (yaw_counter + WRAPSTEP);
+    }
+
     return yaw_counter;
 }
 

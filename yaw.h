@@ -18,6 +18,7 @@
 #ifndef YAW_H_
 #define YAW_H_
 
+#define WRAPSTEP 224
 
 void initYaw(void);
 int32_t getYawPos(void);
