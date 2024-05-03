@@ -19,10 +19,10 @@ void initDisplay (void)
 
 //*****************************************************************************
 //
-// Function to display the mean ADC value (10-bit value, note) and sample count.
+// Function to display the mean ADC value, sample count and yaw value
 //
 //*****************************************************************************
-void displayPercentage(int16_t meanPercentage, int32_t yaw_counter)
+void displayValues(int16_t meanPercentage, int32_t yaw_deg, int32_t yaw_int, int32_t yaw_dec)
 {
     bool negFlag = false;
     char string[17];  // 16 characters across the display
@@ -33,9 +33,6 @@ void displayPercentage(int16_t meanPercentage, int32_t yaw_counter)
 
     // Update line on display.
     OLEDStringDraw (string, 0, 1);
-    int32_t yaw_deg = (yaw_counter * 360 * 100) / 448;
-    int32_t yaw_int = yaw_deg / 100;
-    int32_t yaw_dec = (yaw_deg % 100);
 
     if (yaw_dec < 0) {
         yaw_dec *= -1;

@@ -4,7 +4,7 @@
 
 #include "yaw.h"
 
-static volatile int32_t yaw_counter = 0;
+static volatile int32_t yawPos = 0;
 
 void initYaw(void) {
 
@@ -20,14 +20,26 @@ void initYaw(void) {
 }
 
 int32_t getYawPos(void) {
-    if (yaw_counter > WRAPSTEP) {
-        yaw_counter = -WRAPSTEP + (yaw_counter - WRAPSTEP);
+    if (yawPos > WRAPSTEP) {
+        yawPos = -WRAPSTEP + (yawPos - WRAPSTEP);
     }
-    if (yaw_counter < -WRAPSTEP) {
-        yaw_counter = WRAPSTEP - (yaw_counter + WRAPSTEP);
+    if (yawPos < -WRAPSTEP) {
+        yawPos = WRAPSTEP - (yawPos + WRAPSTEP);
     }
 
-    return yaw_counter;
+    return yawPos;
+}
+
+int32_t getYawDeg(int32_t yawPos) {
+    return (yawPos * 360 * 100) / 448;
+}
+
+int32_t getYawInt(int32_t yaw_deg) {
+    return yaw_deg / 100;
+}
+
+int32_t getYawDec(int32_t yaw_deg) {
+    return yaw_deg % 100;
 }
 
 void yawIntHandler (void) {
@@ -52,10 +64,10 @@ void yawIntHandler (void) {
            ((previous_state == 0x03) && (current_state == 0x02)) ||
            ((previous_state == 0x02) && (current_state == 0x00))) {
            // If moving in a counter-clockwise direction, decrement the yaw counter
-           yaw_counter--;
+           yawPos--;
        } else {
            // For clockwise movement, increment the yaw counter
-           yaw_counter++;
+           yawPos++;
        }
 
        // Keep the current state as a reference for the next encoder change

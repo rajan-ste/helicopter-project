@@ -68,6 +68,7 @@ int main(void) {
     int16_t meanVal; // Declare meanVal here
     uint8_t displayState = 0;
     int32_t yawPos;
+    int32_t yawDeg;
 
     while (1)
     {
@@ -82,7 +83,8 @@ int main(void) {
         case 0 :
             meanVal = getMeanBufferVal();
             yawPos = getYawPos();
-            displayPercentage (getPercentage(meanVal), yawPos);
+            yawDeg = getYawDeg(yawPos);
+            displayValues (getPercentage(meanVal), yawDeg, getYawInt(yawDeg), getYawDec(yawDeg));
             break;
         case 1 :
             meanVal = getMeanBufferVal();

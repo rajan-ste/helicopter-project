@@ -23,5 +23,9 @@
 void initYaw(void);
 int32_t getYawPos(void);
 void yawIntHandler (void);
+int32_t getYawDeg(int32_t yaw_counter);
+int32_t getYawInt(int32_t yaw_deg);
+int32_t getYawDec(int32_t yaw_deg);
+
 
 #endif
