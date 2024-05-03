@@ -12,7 +12,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include <circBufT.h>
+#include "circBufT.h"
 
 
 //*****************************************************************************
@@ -28,7 +28,7 @@ void ADCIntHandler(void);
 void initClock (void);
 void  initADC (void);
 void initDisplay (void);
-uint8_t getPercentage(uint16_t meanVal);
+int16_t getPercentage(uint16_t meanVal);
 uint16_t getMeanBufferVal(void);
 void initAltitude(void);
 uint16_t getLandedAlt (void);

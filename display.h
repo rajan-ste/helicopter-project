@@ -2,7 +2,7 @@
 #define DISPLAY_H_
 
 void initDisplay (void);
-void displayPercentage(uint16_t meanPercentage);
+void displayValues(int16_t meanPercentage, int32_t yaw_deg, int32_t yaw_int, int32_t yaw_dec);
 void displayMeanVal (uint16_t meanVal);
 void displayBlank();
 

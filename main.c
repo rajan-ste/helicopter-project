@@ -17,6 +17,7 @@
 #include "utils/ustdlib.h"
 #include "OrbitOLED/OrbitOLEDInterface.h"
 #include "buttons.h"
+#include "yaw.h"
 
 //*****************************************************************************
 // Initialisation functions for the clock (incl. SysTick), ADC, display
@@ -56,6 +57,7 @@ int main(void) {
     initADC ();
     initButtons();
     initDisplay ();
+    initYaw ();
 
     // Enable interrupts to the processor.
     IntMasterEnable();
@@ -63,8 +65,10 @@ int main(void) {
     // get landed value
     initAltitude();
 
-    uint16_t meanVal; // Declare meanVal here
+    int16_t meanVal; // Declare meanVal here
     uint8_t displayState = 0;
+    int32_t yawPos;
+    int32_t yawDeg;
 
     while (1)
     {
@@ -78,7 +82,9 @@ int main(void) {
         switch (displayState) {
         case 0 :
             meanVal = getMeanBufferVal();
-            displayPercentage (getPercentage(meanVal));
+            yawPos = getYawPos();
+            yawDeg = getYawDeg(yawPos);
+            displayValues (getPercentage(meanVal), yawDeg, getYawInt(yawDeg), getYawDec(yawDeg));
             break;
         case 1 :
             meanVal = getMeanBufferVal();
