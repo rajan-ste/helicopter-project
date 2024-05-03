@@ -20,10 +20,10 @@ void initYaw(void) {
 }
 
 int32_t getYawPos(void) {
-    if (yawPos > WRAPSTEP) {
+    if (yawPos >= WRAPSTEP) {
         yawPos = -WRAPSTEP + (yawPos - WRAPSTEP);
     }
-    if (yawPos < -WRAPSTEP) {
+    if (yawPos <= -WRAPSTEP) {
         yawPos = WRAPSTEP - (yawPos + WRAPSTEP);
     }
 
@@ -31,15 +31,15 @@ int32_t getYawPos(void) {
 }
 
 int32_t getYawDeg(int32_t yawPos) {
-    return (yawPos * 360 * 100) / 448;
+    return (yawPos * MAX_DEGREES * SCALE_100) / NUM_SLITS;
 }
 
 int32_t getYawInt(int32_t yaw_deg) {
-    return yaw_deg / 100;
+    return yaw_deg / SCALE_100;
 }
 
 int32_t getYawDec(int32_t yaw_deg) {
-    return yaw_deg % 100;
+    return yaw_deg % SCALE_100;
 }
 
 void yawIntHandler (void) {

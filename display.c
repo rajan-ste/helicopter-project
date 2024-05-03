@@ -33,7 +33,7 @@ void displayValues(int16_t meanPercentage, int32_t yaw_deg, int32_t yaw_int, int
 
     // Update line on display.
     OLEDStringDraw (string, 0, 1);
-
+    // If decimal part becomes negative don't display negative sign
     if (yaw_dec < 0) {
         yaw_dec *= -1;
         negFlag = true;

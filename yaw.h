@@ -17,6 +17,9 @@
 
 #ifndef YAW_H_
 #define YAW_H_
+#define MAX_DEGREES 360
+#define SCALE_100 100
+#define NUM_SLITS 448
 
 #define WRAPSTEP 224
 
