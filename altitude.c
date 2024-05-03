@@ -124,7 +124,7 @@ uint16_t getLandedAlt (void) {
 // get the altitude percentage given an adc sample
 int16_t getPercentage(uint16_t meanVal)
 {
-    return ((landedAlt - meanVal) * 100) / ONE_VOLT;
+    return ((landedAlt - meanVal) * SCALE_100) / ONE_VOLT;
 }
 
 uint16_t getMeanBufferVal(void)

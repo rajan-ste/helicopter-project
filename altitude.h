@@ -22,6 +22,7 @@
 #define SAMPLE_RATE_HZ 500
 #define ONE_VOLT 1280
 #define ADC_SCALER 38
+#define SCALE_100 100
 
 void SysTickIntHandler(void);
 void ADCIntHandler(void);

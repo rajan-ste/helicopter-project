@@ -95,6 +95,6 @@ int main(void) {
             break;
         }
 
-        SysCtlDelay (SysCtlClockGet() / 100);  // Update display at ~ 2 Hz
+        SysCtlDelay (SysCtlClockGet() / 200);  // Update display at ~ 2 Hz
     }
 }
