@@ -19,6 +19,37 @@
 #include "buttons.h"
 #include "yaw.h"
 
+/******************************************************************************
+ * GLOBALS
+ *****************************************************************************/
+int16_t meanVal = 0;
+int32_t yawPos = 0;
+int32_t yawDeg = 0;
+bool displayFlag = false;
+bool controllerFlag = false;
+
+//*****************************************************************************
+//
+// The interrupt handler for the for SysTick interrupt.
+//
+//*****************************************************************************
+void SysTickIntHandler(void)
+{
+    static uint32_t counter = 0;
+
+    ADCProcessorTrigger(ADC0_BASE, 3);
+
+    if (counter % 1 == 0) {
+        controllerFlag = true;
+    }
+    if (counter % 10 == 0) {
+        displayFlag = true;
+    }
+
+    counter++;
+
+}
+
 //*****************************************************************************
 // Initialisation functions for the clock (incl. SysTick), ADC, display
 //*****************************************************************************
@@ -40,19 +71,20 @@ void initClock (void)
     SysTickEnable();
 }
 
-uint8_t button_state (uint8_t displayState) {
-    if ((checkButton(UP) == PUSHED)) {
-        displayState+=1;
-        if (displayState == 3) {
-            displayState=0;
-        }
-    }
 
-    return displayState;
+void controller(void)
+{
+   meanVal = getMeanBufferVal();
+   yawPos = getYawPos();
+   yawDeg = getYawDeg(yawPos);
 }
 
-int main(void) {
+void updateDisplay()
+{
+    displayValues (getPercentage(meanVal), yawDeg, getYawInt(yawDeg), getYawDec(yawDeg));
+}
 
+void init(void) {
     initClock ();
     initADC ();
     initButtons();
@@ -64,37 +96,25 @@ int main(void) {
 
     // get landed value
     initAltitude();
+}
 
-    int16_t meanVal; // Declare meanVal here
-    uint8_t displayState = 0;
-    int32_t yawPos;
-    int32_t yawDeg;
+int main(void) {
+
+    init();
 
     while (1)
     {
-        updateButtons();
-        if (checkButton(LEFT) == PUSHED) {
-             initAltitude();
-         }
-
+//        updateButtons();
         // Calculate and display the rounded mean of the buffer contents
-        displayState = button_state(displayState);
-        switch (displayState) {
-        case 0 :
-            meanVal = getMeanBufferVal();
-            yawPos = getYawPos();
-            yawDeg = getYawDeg(yawPos);
-            displayValues (getPercentage(meanVal), yawDeg, getYawInt(yawDeg), getYawDec(yawDeg));
-            break;
-        case 1 :
-            meanVal = getMeanBufferVal();
-            displayMeanVal (meanVal);
-            break;
-        case 2 :
-            displayBlank();
-            break;
+        if (controllerFlag) {
+            controller();
+            controllerFlag = 0;
+        }
+        if (displayFlag) {
+            updateDisplay();
+            displayFlag = 0;
         }
 
-        SysCtlDelay (SysCtlClockGet() / 200);  // Update display at ~ 2 Hz
+//        SysCtlDelay (SysCtlClockGet() / 200);  // Update display at ~ 2 Hz
     }
 }

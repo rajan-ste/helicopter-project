@@ -35,19 +35,6 @@ static uint32_t g_ulSampCnt;    // Counter for the interrupts
 static uint16_t landedAlt; // the "helicopter landed" adc value
 static uint16_t maxAlt; // the adc value for 100% helicopter altitude
 
-//*****************************************************************************
-//
-// The interrupt handler for the for SysTick interrupt.
-//
-//*****************************************************************************
-void SysTickIntHandler(void)
-{
-    //
-    // Initiate a conversion
-    //
-    ADCProcessorTrigger(ADC0_BASE, 3);
-    g_ulSampCnt++;
-}
 
 //*****************************************************************************
 //

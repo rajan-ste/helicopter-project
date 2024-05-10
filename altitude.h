@@ -24,7 +24,6 @@
 #define ADC_SCALER 38
 #define SCALE_100 100
 
-void SysTickIntHandler(void);
 void ADCIntHandler(void);
 void initClock (void);
 void  initADC (void);
