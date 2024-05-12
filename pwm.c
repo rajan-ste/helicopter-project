@@ -19,7 +19,7 @@ void initialisePWM (void)
     PWMGenEnable(PWM_MAIN_BASE, PWM_MAIN_GEN);
 
     // Disable the output.  Repeat this call with 'true' to turn O/P on.
-    PWMOutputState(PWM_MAIN_BASE, PWM_MAIN_OUTBIT, false);
+    PWMOutputState(PWM_MAIN_BASE, PWM_MAIN_OUTBIT, true);
 }
 
 /********************************************************
@@ -41,7 +41,7 @@ void initialisePWMTAIL (void)
     PWMGenEnable(PWM_TAIL_BASE, PWM_TAIL_GEN);
 
     // Disable the output.  Repeat this call with 'true' to turn O/P on.
-    PWMOutputState(PWM_TAIL_BASE, PWM_TAIL_OUTBIT, false);
+    PWMOutputState(PWM_TAIL_BASE, PWM_TAIL_OUTBIT, true);
 }
 
 /********************************************************

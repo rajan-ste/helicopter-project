@@ -18,15 +18,38 @@
 #include "OrbitOLED/OrbitOLEDInterface.h"
 #include "buttons.h"
 #include "yaw.h"
+#include "switch.h"
+#include "pid.h"
+#include "pwm.h"
+#include "serial.h"
+
+enum flightState_t {
+    FLYING = 0,
+    LAUNCHING = 1,
+    LANDED = 2
+};
+
 
 /******************************************************************************
  * GLOBALS
  *****************************************************************************/
+const int16_t altKp = 1;
+const int16_t altKi = 0;
+const int16_t altKd = 0;
+const int16_t yawKp = 1;
+const int16_t yawKi = 0;
+const int16_t yawKd = 0;
 int16_t meanVal = 0;
+int16_t setPoint = 0;
+int16_t yawSetPoint = 0;
 int32_t yawPos = 0;
 int32_t yawDeg = 0;
+uint32_t motorDuty = 0;
+uint32_t tailDuty = 0;
 bool displayFlag = false;
 bool controllerFlag = false;
+bool buttonFlag = false;
+enum flightState_t flightState = FLYING;
 
 //*****************************************************************************
 //
@@ -44,6 +67,9 @@ void SysTickIntHandler(void)
     }
     if (counter % 10 == 0) {
         displayFlag = true;
+    }
+    if (counter % 5 == 0) {
+        buttonFlag = true;
     }
 
     counter++;
@@ -72,30 +98,79 @@ void initClock (void)
 }
 
 
-void controller(void)
+void runController(void)
 {
    meanVal = getMeanBufferVal();
    yawPos = getYawPos();
    yawDeg = getYawDeg(yawPos);
+   motorDuty = controller(setPoint, meanVal, altKd, altKp, altKi, 33);
+   tailDuty = controller(yawSetPoint, yawPos, yawKd, yawKp, yawKi, 0.8*motorDuty);
+   setPWM(PWM_START_RATE_HZ, motorDuty);
+   setPWM2(PWM_START_RATE_HZ, tailDuty);
 }
 
 void updateDisplay()
 {
-    displayValues (getPercentage(meanVal), yawDeg, getYawInt(yawDeg), getYawDec(yawDeg));
+    displayValues(getPercentage(meanVal), yawDeg, getYawInt(yawDeg), getYawDec(yawDeg));
+
+}
+
+void moveButtons()
+{
+    switch(flightState) {
+    case FLYING :
+        updateButtons();
+        if (checkButton(UP) == PUSHED) {
+            setPoint = increaseSetPoint(setPoint);
+        }
+        if (checkButton(DOWN) == PUSHED) {
+            setPoint = decreaseSetPoint(setPoint);
+        }
+        if (checkButton(RIGHT) == PUSHED) {
+            yawSetPoint = increaseYawSetPoint(yawSetPoint);
+        }
+        if (checkButton(LEFT) == PUSHED) {
+            yawSetPoint = decreaseYawSetPoint(yawSetPoint);
+        }
+        break;
+
+    case LAUNCHING :
+        increaseSetPoint(setPoint);
+        flightState = FLYING;
+        break;
+
+    case LANDED :
+        updateSwitch();
+        if(getState()) {
+            flightState = LAUNCHING;
+        }
+        break;
+    }
 }
 
 void init(void) {
     initClock ();
     initADC ();
     initButtons();
-    initDisplay ();
     initYaw ();
+    initialisePWM();
+    initialisePWMTAIL();
+    initSwitch();
+    initSerial();
 
     // Enable interrupts to the processor.
     IntMasterEnable();
-
+    SysCtlDelay(SysCtlClockGet() / 5);
     // get landed value
-    initAltitude();
+    int16_t min_Adc = 0;
+    min_Adc = initAltitude();
+    initAdcLimits(min_Adc);
+    setPoint = min_Adc;
+    initDisplay ();
+}
+
+void sendSerialData() {
+    sendData(motorDuty, tailDuty, setPoint, yawSetPoint);
 }
 
 int main(void) {
@@ -107,12 +182,17 @@ int main(void) {
 //        updateButtons();
         // Calculate and display the rounded mean of the buffer contents
         if (controllerFlag) {
-            controller();
+            runController();
             controllerFlag = 0;
         }
         if (displayFlag) {
             updateDisplay();
+            sendSerialData();
             displayFlag = 0;
+        }
+        if (buttonFlag) {
+            moveButtons();
+            buttonFlag = 0;
         }
 
 //        SysCtlDelay (SysCtlClockGet() / 200);  // Update display at ~ 2 Hz
