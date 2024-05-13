@@ -63,5 +63,7 @@ void initialisePWM (void);
 void initialisePWMTAIL (void);
 void setPWM (uint32_t ui32Freq, uint32_t ui32Duty);
 void setPWM2 (uint32_t ui32Freq, uint32_t ui32Duty);
+void disablePWM (void);
+void enablePWM (void);
 
 #endif /*PWM_H_*/

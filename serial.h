@@ -14,7 +14,7 @@
 // Constants
 //********************************************************
 #define SLOWTICK_RATE_HZ 4
-#define MAX_STR_LEN 16
+#define MAX_STR_LEN 105
 //---USB Serial comms: UART0, Rx:PA0 , Tx:PA1
 #define BAUD_RATE 9600
 #define UART_USB_BASE           UART0_BASE
@@ -30,7 +30,7 @@
 //********************************************************
 void initSerial(void);
 void UARTSend(char *pucBuffer);
-void sendData(uint32_t motorDuty, uint32_t tailDuty, int16_t setPoint, int16_t yawSetPoint);
+void sendData(uint32_t motorDuty, uint32_t tailDuty, int16_t setPoint, int16_t yawPos, int16_t yawSetPoint, int16_t offset, int16_t state);
 
 
 #endif /* SERIAL_H_ */
