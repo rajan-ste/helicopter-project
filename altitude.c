@@ -35,19 +35,6 @@ static uint32_t g_ulSampCnt;    // Counter for the interrupts
 static uint16_t landedAlt; // the "helicopter landed" adc value
 static uint16_t maxAlt; // the adc value for 100% helicopter altitude
 
-//*****************************************************************************
-//
-// The interrupt handler for the for SysTick interrupt.
-//
-//*****************************************************************************
-void SysTickIntHandler(void)
-{
-    //
-    // Initiate a conversion
-    //
-    ADCProcessorTrigger(ADC0_BASE, 3);
-    g_ulSampCnt++;
-}
 
 //*****************************************************************************
 //
@@ -112,8 +99,9 @@ void initADC (void)
 
 // initilalise altitude vars at the start of program
 // and when left button is pushed
-void initAltitude(void) {
+int16_t initAltitude() {
     landedAlt = getMeanBufferVal();
+    return landedAlt;
 }
 
 // read the landed altitude value
@@ -127,7 +115,7 @@ int16_t getPercentage(uint16_t meanVal)
     return ((landedAlt - meanVal) * SCALE_100) / ONE_VOLT;
 }
 
-uint16_t getMeanBufferVal(void)
+int16_t getMeanBufferVal(void)
 {
     uint32_t sum = 0;
     uint16_t i = 0;

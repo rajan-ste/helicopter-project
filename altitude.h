@@ -24,13 +24,12 @@
 #define ADC_SCALER 38
 #define SCALE_100 100
 
-void SysTickIntHandler(void);
 void ADCIntHandler(void);
 void initClock (void);
 void  initADC (void);
 void initDisplay (void);
 int16_t getPercentage(uint16_t meanVal);
-uint16_t getMeanBufferVal(void);
-void initAltitude(void);
+int16_t getMeanBufferVal(void);
+int16_t initAltitude(void);
 uint16_t getLandedAlt (void);
 #endif /*ALTITUDE_H_*/

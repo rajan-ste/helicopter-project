@@ -3,8 +3,13 @@
  */
 
 #include "yaw.h"
+#include "reference.h"
+#include "pid.h"
+#include "helistates.h"
 
 static volatile int32_t yawPos = 0;
+static bool pastWrapOver = false;
+
 
 void initYaw(void) {
 
@@ -17,6 +22,7 @@ void initYaw(void) {
     GPIOIntTypeSet(GPIO_PORTB_BASE, GPIO_PIN_0 | GPIO_PIN_1, GPIO_BOTH_EDGES);
 
     GPIOIntEnable(GPIO_PORTB_BASE, GPIO_PIN_0 | GPIO_PIN_1);
+
 }
 
 int32_t getYawPos(void) {
@@ -72,4 +78,31 @@ void yawIntHandler (void) {
 
        // Keep the current state as a reference for the next encoder change
        previous_state = current_state;
+}
+
+/**
+ * Function to find the reference yaw, called in launching state
+ * @yawPos the current yaw position
+ * @yawSetPoint the current yaw set point
+ * @refVal the reference value to set once we find it
+ * @flightState the state enum for the helicopter
+ */
+void findReferenceYaw (int32_t *yawPos, int16_t *yawSetPoint, int16_t *refVal, flightState_t *flightState) {
+    if (getRef()) {
+        if (*yawSetPoint < 0 && *yawPos > 0 &&  !pastWrapOver) {
+            *yawSetPoint = increaseYawSetPointRef(*yawSetPoint);
+            pastWrapOver = true;
+        } else if (*yawPos < 0) {
+            if (*yawPos >= *yawSetPoint) {
+                *yawSetPoint = increaseYawSetPointRef(*yawSetPoint);
+            }
+        }
+        else if (*yawPos >= *yawSetPoint && *yawSetPoint > 0) {
+            *yawSetPoint = increaseYawSetPointRef(*yawSetPoint);
+        }
+    } else if (!getRef()) {
+        *refVal = getYawPos();
+        *yawSetPoint = *refVal;
+        *flightState = FLYING;
+    }
 }
