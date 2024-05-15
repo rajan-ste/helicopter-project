@@ -42,6 +42,15 @@ int16_t increaseYawSetPoint(int16_t yawSetPoint)
     return yawSetPoint;
 }
 
+int16_t increaseYawSetPointRef(int16_t yawSetPoint)
+{
+    yawSetPoint += 19;
+    if (yawSetPoint >= 224) {
+        yawSetPoint = -224;
+    }
+    return yawSetPoint;
+}
+
 int16_t decreaseYawSetPoint(int16_t yawSetPoint)
 {
     yawSetPoint -= 19;

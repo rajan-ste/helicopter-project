@@ -1,21 +1,10 @@
 #ifndef SERIAL_H_
 #define SERIAL_H_
 
-//********************************************************
-//
-// serial.h
-//
-// Author:  P.J. Bones  UCECE, Modified from uartDemo.c by Tom Rizzi, Euan Robinson, Satwik Meravanage
-// Last modified: 21 May 2021
-//
-//********************************************************
 
-//********************************************************
-// Constants
-//********************************************************
 #define SLOWTICK_RATE_HZ 4
 #define MAX_STR_LEN 105
-//---USB Serial comms: UART0, Rx:PA0 , Tx:PA1
+
 #define BAUD_RATE 9600
 #define UART_USB_BASE           UART0_BASE
 #define UART_USB_PERIPH_UART    SYSCTL_PERIPH_UART0

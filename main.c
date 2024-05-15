@@ -1,8 +1,6 @@
 #include "altitude.h"
 #include "display.h"
 #include "circBufT.h"
-#include "driverlib/sysctl.h"
-#include "driverlib/systick.h"
 #include <stdint.h>
 #include <stdbool.h>
 #include "inc/hw_memmap.h"
@@ -23,15 +21,8 @@
 #include "pwm.h"
 #include "serial.h"
 #include "reference.h"
-
-enum flightState_t {
-    FLYING = 0,
-    LAUNCHING = 1,
-    LANDED = 2,
-    LOCKED = 3,
-    LANDING = 4
-};
-
+#include "helistates.h"
+#include "kernel.h"
 
 /******************************************************************************
  * GLOBALS
@@ -44,35 +35,11 @@ int32_t yawDeg = 0;
 uint32_t motorDuty = 0;
 uint32_t tailDuty = 0;
 int16_t min_Adc = 0;
-bool displayFlag = false;
-bool controllerFlag = false;
-bool buttonFlag = false;
-enum flightState_t flightState = LOCKED;
+int16_t refVal = 0;
+bool firstRefCycle = true;
+flightState_t flightState = LOCKED;
 
-//*****************************************************************************
-//
-// The interrupt handler for the for SysTick interrupt.
-//
-//*****************************************************************************
-void SysTickIntHandler(void)
-{
-    static uint32_t counter = 0;
 
-    ADCProcessorTrigger(ADC0_BASE, 3);
-
-    if (counter % 1 == 0) {
-        controllerFlag = true;
-    }
-    if (counter % 10 == 0) {
-        displayFlag = true;
-    }
-    if (counter % 5 == 0) {
-        buttonFlag = true;
-    }
-
-    counter++;
-
-}
 
 //*****************************************************************************
 // Initialisation functions for the clock (incl. SysTick), ADC, display
@@ -82,19 +49,7 @@ void initClock (void)
     // Set the clock rate to 20 MHz
     SysCtlClockSet (SYSCTL_SYSDIV_10 | SYSCTL_USE_PLL | SYSCTL_OSC_MAIN |
                    SYSCTL_XTAL_16MHZ);
-    //
-    // Set up the period for the SysTick timer.  The SysTick timer period is
-    // set as a function of the system clock.
-    SysTickPeriodSet(SysCtlClockGet() / SAMPLE_RATE_HZ);
-    //
-    // Register the interrupt handler
-    SysTickIntRegister(SysTickIntHandler);
-    //
-    // Enable interrupt and device
-    SysTickIntEnable();
-    SysTickEnable();
 }
-
 
 void runController(void)
 {
@@ -112,6 +67,7 @@ void updateDisplay()
 }
 
 int16_t ctr = 0;
+int16_t ctr2 = 0;
 
 void moveButtons()
 {
@@ -131,31 +87,20 @@ void moveButtons()
         if (checkButton(LEFT) == PUSHED) {
             yawSetPoint = decreaseYawSetPoint(yawSetPoint);
         }
-//        if (getState()) {
-//            yawSetPoint = 0;
-//            flightState = LANDING;
-//        }
+        if (!getState()) {
+            flightState = LANDING;
+        }
         break;
-
 
     case LAUNCHING :
         enablePWM();
         updateReference();
-        if(ctr == 0) {
+        if(firstRefCycle) {
             setPoint = increaseSetPoint(setPoint);
+            yawSetPoint = increaseYawSetPointRef(yawSetPoint);
+            firstRefCycle = false;
         }
-
-        if (getRef()) {
-            if (yawPos >= yawSetPoint) {
-                yawSetPoint = increaseYawSetPoint(yawSetPoint);
-            }
-        }
-        else if (!getRef()) {
-            int16_t refVal = getYawPos();
-            yawSetPoint = refVal;
-            flightState = FLYING;
-        }
-        ctr++;
+        findReferenceYaw(&yawPos, &yawSetPoint, &refVal, &flightState);
         break;
 
     case LANDED :
@@ -174,10 +119,9 @@ void moveButtons()
         break;
 
     case LANDING :
-        if (yawPos == 0) {
-            setPoint = min_Adc;
-        }
-        if (meanVal = min_Adc) {
+        yawSetPoint = refVal;
+        setPoint = 0;
+        if (meanVal == 0 && yawPos == refVal) {
             flightState = LANDED;
         }
     }
@@ -194,6 +138,7 @@ void init(void) {
     initSwitch();
     initSerial();
     initReference();
+    initKernelSysTick();
 
     // Enable interrupts to the processor.
     IntMasterEnable();
@@ -215,25 +160,6 @@ void sendSerialData() {
 int main(void) {
 
     init();
+    runKernel();
 
-    while (1)
-    {
-//        updateButtons();
-        // Calculate and display the rounded mean of the buffer contents
-        if (controllerFlag) {
-            runController();
-            controllerFlag = 0;
-        }
-        if (displayFlag) {
-            updateDisplay();
-            sendSerialData();
-            displayFlag = 0;
-        }
-        if (buttonFlag) {
-            moveButtons();
-            buttonFlag = 0;
-        }
-
-//        SysCtlDelay (SysCtlClockGet() / 200);  // Update display at ~ 2 Hz
-    }
 }

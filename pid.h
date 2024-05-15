@@ -18,6 +18,7 @@ int16_t getmaxAdc();
 int16_t increaseSetPoint (int16_t setPoint);
 int16_t decreaseSetPoint (int16_t setPoint);
 int16_t increaseYawSetPoint(int16_t yawSetPoint);
+int16_t increaseYawSetPointRef(int16_t yawSetPoint);
 int16_t decreaseYawSetPoint(int16_t yawSetPoint);
 int16_t altController (int16_t setPoint, int16_t meanVal);
 int16_t yawController (int16_t setPoint, int16_t yawPos, int16_t offset);
