@@ -51,6 +51,10 @@ void initClock (void)
                    SYSCTL_XTAL_16MHZ);
 }
 
+void sendSerialData() {
+    sendData(motorDuty, tailDuty, setPoint, yawPos, yawSetPoint, motorDuty * 0.8, flightState);
+}
+
 void runController(void)
 {
    meanVal = getMeanBufferVal();
@@ -64,10 +68,12 @@ void runController(void)
 void updateDisplay()
 {
     displayValues(getPercentage(meanVal), yawDeg, getYawInt(yawDeg), getYawDec(yawDeg));
+    sendSerialData();
 }
 
-int16_t ctr = 0;
-int16_t ctr2 = 0;
+void adcSample(void) {
+    ADCProcessorTrigger(ADC0_BASE, 3);
+}
 
 void moveButtons()
 {
@@ -153,13 +159,12 @@ void init(void) {
     initDisplay ();
 }
 
-void sendSerialData() {
-    sendData(motorDuty, tailDuty, setPoint, yawPos, yawSetPoint, motorDuty * 0.8, flightState);
-}
-
 int main(void) {
 
     init();
+    setKernelTask(adcSample, 1, 0);
+    setKernelTask(runController, 1, 1);
+    setKernelTask(updateDisplay, 125, 2);
+    setKernelTask(moveButtons, 10, 3);
     runKernel();
-
 }

@@ -1,11 +1,11 @@
 #include "kernel.h"
 #include "pid.h"
-
+#include <stdint.h>
 
 bool displayFlag = false;
 bool controllerFlag = false;
 bool buttonFlag = false;
-unsigned long systemTime = 0;
+static Task_t tasks[NUM_TASKS];
 
 void initKernelSysTick(void) {
     // Set up the period for the SysTick timer.  The SysTick timer period is
@@ -20,9 +20,31 @@ void initKernelSysTick(void) {
     SysTickEnable();
 }
 
-//void initKernel(void) {
-//
-//}
+/**
+ * Register a task in the kernel, lower index for higher priority
+ */
+void setKernelTask(void (*taskFunc)(void), uint32_t cycles, int16_t index) {
+    if (index < NUM_TASKS) {
+        tasks[index].taskFunc = taskFunc;
+        tasks[index].cycles = cycles;
+        tasks[index].currCycles = 0;
+        tasks[index].ready = true;
+    }
+}
+
+/**
+ * Update the ticks and ready state of a task every systick
+ */
+void updateTaskState(void) {
+    int16_t i = 0;
+    for (i=0; i < NUM_TASKS; i++) {
+        tasks[i].currCycles++;
+        if (tasks[i].currCycles == tasks[i].cycles) {
+            tasks[i].ready = true;
+            tasks[i].currCycles = 0;
+        }
+    }
+}
 
 //*****************************************************************************
 //
@@ -31,45 +53,21 @@ void initKernelSysTick(void) {
 //*****************************************************************************
 void SysTickIntHandler(void)
 {
-    static uint32_t counter = 0;
-
-    ADCProcessorTrigger(ADC0_BASE, 3);
-
-    if (counter % 1 == 0) {
-        controllerFlag = true;
-    }
-    if (counter % 10 == 0) {
-        displayFlag = true;
-    }
-    if (counter % 5 == 0) {
-        buttonFlag = true;
-    }
-
-    counter++;
-
+    updateTaskState();
 }
 
+/*
+ * run the kernel
+ */
 void runKernel(void) {
-
-    while (1)
-        {
-    //        updateButtons();
-            // Calculate and display the rounded mean of the buffer contents
-            if (controllerFlag) {
-                runController();
-                controllerFlag = 0;
-            }
-            if (displayFlag) {
-                updateDisplay();
-                sendSerialData();
-                displayFlag = 0;
-            }
-            if (buttonFlag) {
-                moveButtons();
-                buttonFlag = 0;
-            }
-
-    //        SysCtlDelay (SysCtlClockGet() / 200);  // Update display at ~ 2 Hz
-        }
-
+    while (1) {
+       int16_t i = 0;
+       for (i = 0; i < NUM_TASKS; i++) {
+           if (tasks[i].ready) {
+               tasks[i].ready = false;
+               tasks[i].taskFunc();
+               break;
+           }
+       }
+   }
 }
