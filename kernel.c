@@ -20,8 +20,11 @@ void initKernelSysTick(void) {
     SysTickEnable();
 }
 
-/**
+/*
  * Register a task in the kernel, lower index for higher priority
+ * @taskFunc pointer to a function to be called by task object
+ * @cycles the number of system ticks to wait before executing the task - 1 (cycles = 1 means every tick)
+ * @index the priority of the task, lower index means it will be run earlier
  */
 void setKernelTask(void (*taskFunc)(void), uint32_t cycles, int16_t index) {
     if (index < NUM_TASKS) {
@@ -32,8 +35,8 @@ void setKernelTask(void (*taskFunc)(void), uint32_t cycles, int16_t index) {
     }
 }
 
-/**
- * Update the ticks and ready state of a task every systick
+/*
+ * Update the cycles and ready state of a task
  */
 void updateTaskState(void) {
     int16_t i = 0;
@@ -49,15 +52,18 @@ void updateTaskState(void) {
 //*****************************************************************************
 //
 // The interrupt handler for the for SysTick interrupt.
+// ADCProcessorTrigger must be called here rather than the kernel otherwise
+// our first sampled adc value will be 0
 //
 //*****************************************************************************
 void SysTickIntHandler(void)
 {
     updateTaskState();
+    ADCProcessorTrigger(ADC0_BASE, 3);
 }
 
 /*
- * run the kernel
+ * Run the kernel, by checking if task is ready then executing it
  */
 void runKernel(void) {
     while (1) {

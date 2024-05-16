@@ -37,9 +37,8 @@ uint32_t tailDuty = 0;
 int16_t min_Adc = 0;
 int16_t refVal = 0;
 bool firstRefCycle = true;
+bool refKnown = false;
 flightState_t flightState = LOCKED;
-
-
 
 //*****************************************************************************
 // Initialisation functions for the clock (incl. SysTick), ADC, display
@@ -51,8 +50,9 @@ void initClock (void)
                    SYSCTL_XTAL_16MHZ);
 }
 
-void sendSerialData() {
-    sendData(motorDuty, tailDuty, setPoint, yawPos, yawSetPoint, motorDuty * 0.8, flightState);
+void sendSerialData()
+{
+    sendData(motorDuty, tailDuty, setPoint, yawPos, yawSetPoint, motorDuty * 0.8, flightState, refVal, meanVal);
 }
 
 void runController(void)
@@ -71,9 +71,10 @@ void updateDisplay()
     sendSerialData();
 }
 
-void adcSample(void) {
-    ADCProcessorTrigger(ADC0_BASE, 3);
-}
+//void adcSample(void)
+//{
+//    ADCProcessorTrigger(ADC0_BASE, 3);
+//}
 
 void moveButtons()
 {
@@ -82,18 +83,18 @@ void moveButtons()
         updateButtons();
         updateSwitch();
         if (checkButton(UP) == PUSHED) {
-            setPoint = increaseSetPoint(setPoint);
+            increaseSetPoint(&setPoint);
         }
         if (checkButton(DOWN) == PUSHED) {
-            setPoint = decreaseSetPoint(setPoint);
+            decreaseSetPoint(&setPoint);
         }
         if (checkButton(RIGHT) == PUSHED) {
-            yawSetPoint = increaseYawSetPoint(yawSetPoint);
+            increaseYawSetPoint(&yawSetPoint);
         }
         if (checkButton(LEFT) == PUSHED) {
-            yawSetPoint = decreaseYawSetPoint(yawSetPoint);
+            decreaseYawSetPoint(&yawSetPoint);
         }
-        if (!getState()) {
+        if (!getSwitchState()) {
             flightState = LANDING;
         }
         break;
@@ -102,39 +103,47 @@ void moveButtons()
         enablePWM();
         updateReference();
         if(firstRefCycle) {
-            setPoint = increaseSetPoint(setPoint);
-            yawSetPoint = increaseYawSetPointRef(yawSetPoint);
+            increaseSetPoint(&setPoint);
+            increaseYawSetPointRef(&yawSetPoint);
             firstRefCycle = false;
         }
-        findReferenceYaw(&yawPos, &yawSetPoint, &refVal, &flightState);
+        if(!refKnown) {
+            findReferenceYaw(&yawPos, &yawSetPoint, &refVal, &flightState, &refKnown);
+        } else if (refKnown) {
+            goToRefYaw(&yawPos, &yawSetPoint, &refVal, &flightState);
+        }
         break;
 
     case LANDED :
         updateSwitch();
-        if(getState()) {
+        if(getSwitchState()) {
             flightState = LAUNCHING;
+            firstRefCycle = true;
         }
         break;
 
     case LOCKED :
         updateSwitch();
         disablePWM();
-        if(getState() == 0) {
+        if(!getSwitchState()) {
             flightState = LANDED;
         }
         break;
 
     case LANDING :
         yawSetPoint = refVal;
-        setPoint = 0;
-        if (meanVal == 0 && yawPos == refVal) {
+        if (yawPos == refVal) {
+            setPoint = min_Adc;
+        }
+        if (yawPos == refVal && (meanVal >= min_Adc || meanVal >= (min_Adc - 6))) {
             flightState = LANDED;
         }
     }
 
 }
 
-void init(void) {
+void init(void)
+{
     initClock ();
     initADC ();
     initButtons();
@@ -145,13 +154,12 @@ void init(void) {
     initSerial();
     initReference();
     initKernelSysTick();
-
-    // Enable interrupts to the processor.
     IntMasterEnable();
-    SysCtlDelay(SysCtlClockGet() / 5);
+    SysCtlDelay(SysCtlClockGet() / 5); // delay to populate buffer
+
     // get landed value
-    int16_t min_Adc = 0;
-    min_Adc = initAltitude();
+    initAltitude();
+    min_Adc = getLandedAlt();
     initAdcLimits(min_Adc);
     setPoint = min_Adc;
     runController();
@@ -159,12 +167,13 @@ void init(void) {
     initDisplay ();
 }
 
-int main(void) {
-
+int main(void)
+{
     init();
-    setKernelTask(adcSample, 1, 0);
-    setKernelTask(runController, 1, 1);
-    setKernelTask(updateDisplay, 125, 2);
-    setKernelTask(moveButtons, 10, 3);
+
+//    setKernelTask(adcSample, KERNEL_FREQ_HZ / ADC_SAMPLE_RATE, PRIO_0);
+    setKernelTask(runController, KERNEL_FREQ_HZ / RUN_CONTROLLER_RATE, PRIO_0);
+    setKernelTask(updateDisplay, KERNEL_FREQ_HZ / UPDATE_DISPLAY_RATE, PRIO_1);
+    setKernelTask(moveButtons, KERNEL_FREQ_HZ / MOVE_BUTTONS_RATE, PRIO_2);
     runKernel();
 }

@@ -28,8 +28,27 @@
 #include "kernel.h"
 
 #define KERNEL_FREQ_HZ 500
-#define NUM_TASKS 4
+#define NUM_TASKS 3
+#define ADC_SAMPLE_RATE 500
+#define RUN_CONTROLLER_RATE 500
+#define UPDATE_DISPLAY_RATE 4
+#define MOVE_BUTTONS_RATE 100
 
+/*
+ * PRIO_0 is highest, priorities listed in descending order
+ */
+#define PRIO_0 0
+#define PRIO_1 1
+#define PRIO_2 2
+#define PRIO_3 3
+
+/*
+ * Task object
+ * @taskFunc the function to execute when the task is run
+ * @cycles the cycle rate to execute the task at
+ * @currCycles the number of cycles since the task was last executed
+ * @ready true if task is ready to execute
+ */
 typedef struct {
     void (*taskFunc)(void);
     uint32_t cycles;

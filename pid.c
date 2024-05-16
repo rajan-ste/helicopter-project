@@ -3,61 +3,86 @@
 static int16_t minAdc = 0;
 static int16_t maxAdc = 0;
 
+/*
+ * initiates the min and max ADC values
+ */
 void initAdcLimits(int16_t landedAdc)
 {
     minAdc = landedAdc;
     maxAdc = minAdc - ONE_VOLT;
 }
 
+/*
+ * returns the min ADC value
+ */
+
 int16_t getminAdc()
 {
     return minAdc;
 }
+
+/*
+ * returns the max ADC value
+ */
 
 int16_t getmaxAdc()
 {
     return maxAdc;
 }
 
-int16_t increaseSetPoint (int16_t setPoint)
+/*
+ * increases the altitude set point and does not allow the set point
+ * to go under the max ADC value
+ */
+
+void increaseSetPoint (int16_t *setPoint)
 {
-    setPoint -= 124;
-    if (setPoint <= maxAdc) {
-        setPoint = maxAdc;
+    *setPoint -= 124;
+    if (*setPoint <= maxAdc) {
+        *setPoint = maxAdc;
     }
-    return setPoint;
 }
 
-int16_t decreaseSetPoint (int16_t setPoint)
+/*
+ * decreases the altitude set point and does not allow the set point
+ * to go over the min ADC value
+ */
+
+void decreaseSetPoint (int16_t *setPoint)
 {
-    return setPoint += 124;
+    *setPoint += 124;
+    if (*setPoint >= minAdc) {
+        *setPoint = minAdc;
+    }
 }
 
-int16_t increaseYawSetPoint(int16_t yawSetPoint)
+/*
+ * increases the yaw set point and if the yaw set point goes past the
+ * wrap point the helicopter changes direction to go the shortest path
+ */
+
+void increaseYawSetPoint(int16_t *yawSetPoint)
 {
-    yawSetPoint += 19;
-    if (yawSetPoint >= 224) {
-        yawSetPoint = -224 + (yawSetPoint - 224);
+    *yawSetPoint += 19;
+    if (*yawSetPoint >= 224) {
+        *yawSetPoint = -224 + (*yawSetPoint - 224);
     }
-    return yawSetPoint;
 }
 
-int16_t increaseYawSetPointRef(int16_t yawSetPoint)
+void increaseYawSetPointRef(int16_t *yawSetPoint)
 {
-    yawSetPoint += 19;
-    if (yawSetPoint >= 224) {
-        yawSetPoint = -224;
+    *yawSetPoint += 19;
+    if (*yawSetPoint >= 224) {
+        *yawSetPoint = -224;
     }
-    return yawSetPoint;
 }
 
-int16_t decreaseYawSetPoint(int16_t yawSetPoint)
+void decreaseYawSetPoint(int16_t *yawSetPoint)
 {
-    yawSetPoint -= 19;
-    if (yawSetPoint <= -224) {
-        yawSetPoint = 224 + (yawSetPoint + 224);
+    *yawSetPoint -= 19;
+    if (*yawSetPoint <= -224) {
+        *yawSetPoint = 224 + (*yawSetPoint + 224);
     }
-    return yawSetPoint;
 }
 
 int16_t altController (int16_t setPoint, int16_t meanVal)
@@ -74,11 +99,11 @@ int16_t altController (int16_t setPoint, int16_t meanVal)
     I = (I + dI);
     prev_sensor_reading = meanVal;
 
-    if(control < 5) {
-        control = 5;
+    if(control < 2) {
+        control = 2;
     }
-    if(control > 95) {
-        control = 95;
+    if(control > 98) {
+        control = 98;
     }
 
     return control;
@@ -108,11 +133,11 @@ int16_t yawController (int16_t setPoint, int16_t yawPos, int16_t offset)
     I = (I + dI);
     prev_yaw_reading = yawPos;
 
-    if(control < 5) {
-        control = 5;
+    if(control < 2) {
+        control = 2;
     }
-    if(control > 95) {
-        control = 95;
+    if(control > 98) {
+        control = 98;
     }
 
     return control;

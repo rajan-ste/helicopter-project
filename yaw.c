@@ -87,22 +87,32 @@ void yawIntHandler (void) {
  * @refVal the reference value to set once we find it
  * @flightState the state enum for the helicopter
  */
-void findReferenceYaw (int32_t *yawPos, int16_t *yawSetPoint, int16_t *refVal, flightState_t *flightState) {
+void findReferenceYaw (int32_t *yawPos, int16_t *yawSetPoint, int16_t *refVal, flightState_t *flightState, bool *refKnown) {
     if (getRef()) {
         if (*yawSetPoint < 0 && *yawPos > 0 &&  !pastWrapOver) {
-            *yawSetPoint = increaseYawSetPointRef(*yawSetPoint);
+            increaseYawSetPointRef(yawSetPoint);
             pastWrapOver = true;
         } else if (*yawPos < 0) {
             if (*yawPos >= *yawSetPoint) {
-                *yawSetPoint = increaseYawSetPointRef(*yawSetPoint);
+                increaseYawSetPointRef(yawSetPoint);
             }
         }
         else if (*yawPos >= *yawSetPoint && *yawSetPoint > 0) {
-            *yawSetPoint = increaseYawSetPointRef(*yawSetPoint);
+            increaseYawSetPointRef(yawSetPoint);
         }
     } else if (!getRef()) {
         *refVal = getYawPos();
         *yawSetPoint = *refVal;
         *flightState = FLYING;
+        *refKnown = true;
     }
 }
+
+void goToRefYaw(int32_t *yawPos, int16_t *yawSetPoint, int16_t *refVal, flightState_t *flightState) {
+    *yawSetPoint = *refVal;
+    if (*yawPos == *refVal) {
+        *flightState = FLYING;
+    }
+}
+
+

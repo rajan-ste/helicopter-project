@@ -30,7 +30,8 @@ void yawIntHandler (void);
 int32_t getYawDeg(int32_t yaw_counter);
 int32_t getYawInt(int32_t yaw_deg);
 int32_t getYawDec(int32_t yaw_deg);
-void findReferenceYaw (int32_t *yawPos, int16_t *yawSetPoint, int16_t *refVal, flightState_t *flightState);
+void findReferenceYaw (int32_t *yawPos, int16_t *yawSetPoint, int16_t *refVal, flightState_t *flightState, bool *refKnown);
+void goToRefYaw(int32_t *yawPos, int16_t *yawSetPoint, int16_t *refVal, flightState_t *flightState);
 
 
 #endif

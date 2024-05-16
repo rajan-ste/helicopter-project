@@ -8,7 +8,6 @@
 void initSwitch(void);
 void updateSwitch();
 void updateSwitch();
-bool getState();
-
+bool getSwitchState();
 
 #endif /*SWITCH_H_*/

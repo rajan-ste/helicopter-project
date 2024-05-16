@@ -115,6 +115,9 @@ int16_t getPercentage(uint16_t meanVal)
     return ((landedAlt - meanVal) * SCALE_100) / ONE_VOLT;
 }
 
+/*
+ * Get the mean value stored in the adc buffer
+ */
 int16_t getMeanBufferVal(void)
 {
     uint32_t sum = 0;

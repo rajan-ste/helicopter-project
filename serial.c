@@ -51,10 +51,12 @@ void UARTSend (char *pucBuffer)
 //**********************************************************************
 // Transmit the current data values via serial
 //**********************************************************************
-void sendData(uint32_t motorDuty, uint32_t tailDuty, int16_t setPoint, int16_t yawPos, int16_t yawSetPoint, int16_t offset, int16_t state)
+void sendData(uint32_t motorDuty, uint32_t tailDuty, int16_t setPoint, int16_t yawPos,
+              int16_t yawSetPoint, int16_t offset, int16_t state, int16_t refVal, int16_t meanVal)
 {
 
-    usprintf(statusStr, "M: %3d%% T: %3d%% Y: %3d YS: %3d SP: %3d O: %3d S: %3d \n\r", motorDuty, tailDuty, yawPos, yawSetPoint, setPoint, offset, state);
+    usprintf(statusStr, "M: %3d%% T: %3d%% Y: %3d YS: %3d SP: %3d O: %3d S: %3d Ref: %3d MV: %3d \n\r", motorDuty, tailDuty,
+             yawPos, yawSetPoint, setPoint, offset, state, refVal, meanVal);
     UARTSend (statusStr);
 
 }
