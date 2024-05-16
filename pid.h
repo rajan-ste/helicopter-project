@@ -4,11 +4,11 @@
 #include "altitude.h"
 #include <stdint.h>
 #define DELTA_T 0.002
-#define ALT_KP 1
-#define ALT_KI 0
+#define ALT_KP 0.5175
+#define ALT_KI 0.477
 #define ALT_KD 0
-#define YAW_KP 1
-#define YAW_KI 0
+#define YAW_KP 2.7
+#define YAW_KI 0.3
 #define YAW_KD 0
 #define GRAVITY 33
 

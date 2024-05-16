@@ -5,9 +5,11 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-void initSwitch(void);
-void updateSwitch();
-void updateSwitch();
-bool getSwitchState();
+void initSwitch1(void);
+void initSwitch2(void);
+void updateSwitch1();
+void updateSwitch2();
+bool getSwitchState1();
+bool getSwitchState2();
 
 #endif /*SWITCH_H_*/

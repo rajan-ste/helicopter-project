@@ -27,12 +27,12 @@
 #include "helistates.h"
 #include "kernel.h"
 
-#define KERNEL_FREQ_HZ 500
-#define NUM_TASKS 3
-#define ADC_SAMPLE_RATE 500
-#define RUN_CONTROLLER_RATE 500
-#define UPDATE_DISPLAY_RATE 4
-#define MOVE_BUTTONS_RATE 100
+#define KERNEL_FREQ_HZ 1000
+#define NUM_TASKS 4
+#define RUN_CONTROLLER_RATE 1000
+#define UPDATE_DISPLAY_RATE 100
+#define MOVE_BUTTONS_RATE 200
+#define SEND_DATA_RATE 4
 
 /*
  * PRIO_0 is highest, priorities listed in descending order

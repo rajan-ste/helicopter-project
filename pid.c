@@ -43,6 +43,7 @@ void increaseSetPoint (int16_t *setPoint)
     }
 }
 
+
 /*
  * decreases the altitude set point and does not allow the set point
  * to go over the min ADC value
@@ -91,10 +92,14 @@ int16_t altController (int16_t setPoint, int16_t meanVal)
     static int16_t prev_sensor_reading = 0;
     int16_t error = setPoint - meanVal;
     int16_t P = ALT_KP * error;
+
     int16_t dI = ALT_KI * error * DELTA_T;
     int16_t D = ALT_KD * (prev_sensor_reading - meanVal) / DELTA_T;
-
-    int16_t control = GRAVITY - P + (I + dI) + D;
+    int16_t total = P + (I + dI) + D;
+    if (total >= 30) {
+        total = 30;
+    }
+    int16_t control = GRAVITY - (total);
 
     I = (I + dI);
     prev_sensor_reading = meanVal;
@@ -122,8 +127,8 @@ int16_t yawController (int16_t setPoint, int16_t yawPos, int16_t offset)
         error = error;
     }
     int16_t P = YAW_KP * error;
-    if (P > 30) {
-        P = 30;
+    if (P > 60) {
+        P = 60;
     }
     int16_t dI = YAW_KI * error * DELTA_T;
     int16_t D = YAW_KD * (prev_yaw_reading - yawPos) / DELTA_T;

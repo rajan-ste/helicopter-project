@@ -68,7 +68,6 @@ void runController(void)
 void updateDisplay()
 {
     displayValues(getPercentage(meanVal), yawDeg, getYawInt(yawDeg), getYawDec(yawDeg));
-    sendSerialData();
 }
 
 //void adcSample(void)
@@ -78,10 +77,15 @@ void updateDisplay()
 
 void moveButtons()
 {
+    // check for reset button press
+    updateSwitch2();
+    if (!getSwitchState2()) {
+        SysCtlReset();
+    }
     switch(flightState) {
     case FLYING :
         updateButtons();
-        updateSwitch();
+        updateSwitch1();
         if (checkButton(UP) == PUSHED) {
             increaseSetPoint(&setPoint);
         }
@@ -94,7 +98,7 @@ void moveButtons()
         if (checkButton(LEFT) == PUSHED) {
             decreaseYawSetPoint(&yawSetPoint);
         }
-        if (!getSwitchState()) {
+        if (!getSwitchState1()) {
             flightState = LANDING;
         }
         break;
@@ -115,17 +119,17 @@ void moveButtons()
         break;
 
     case LANDED :
-        updateSwitch();
-        if(getSwitchState()) {
+        updateSwitch1();
+        if(getSwitchState1()) {
             flightState = LAUNCHING;
             firstRefCycle = true;
         }
         break;
 
     case LOCKED :
-        updateSwitch();
+        updateSwitch1();
         disablePWM();
-        if(!getSwitchState()) {
+        if(!getSwitchState1()) {
             flightState = LANDED;
         }
         break;
@@ -139,7 +143,6 @@ void moveButtons()
             flightState = LANDED;
         }
     }
-
 }
 
 void init(void)
@@ -150,7 +153,8 @@ void init(void)
     initYaw ();
     initialisePWM();
     initialisePWMTAIL();
-    initSwitch();
+    initSwitch1();
+    initSwitch2();
     initSerial();
     initReference();
     initKernelSysTick();
@@ -171,9 +175,9 @@ int main(void)
 {
     init();
 
-//    setKernelTask(adcSample, KERNEL_FREQ_HZ / ADC_SAMPLE_RATE, PRIO_0);
     setKernelTask(runController, KERNEL_FREQ_HZ / RUN_CONTROLLER_RATE, PRIO_0);
-    setKernelTask(updateDisplay, KERNEL_FREQ_HZ / UPDATE_DISPLAY_RATE, PRIO_1);
-    setKernelTask(moveButtons, KERNEL_FREQ_HZ / MOVE_BUTTONS_RATE, PRIO_2);
+    setKernelTask(moveButtons, KERNEL_FREQ_HZ / MOVE_BUTTONS_RATE, PRIO_1);
+    setKernelTask(updateDisplay, KERNEL_FREQ_HZ / UPDATE_DISPLAY_RATE, PRIO_2);
+    setKernelTask(sendSerialData, KERNEL_FREQ_HZ / SEND_DATA_RATE, PRIO_3);
     runKernel();
 }

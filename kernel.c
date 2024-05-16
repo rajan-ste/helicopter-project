@@ -36,7 +36,7 @@ void setKernelTask(void (*taskFunc)(void), uint32_t cycles, int16_t index) {
 }
 
 /*
- * Update the cycles and ready state of a task
+ * Update the current cycles and ready state of a task
  */
 void updateTaskState(void) {
     int16_t i = 0;
