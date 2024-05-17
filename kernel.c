@@ -1,11 +1,11 @@
 #include "kernel.h"
 #include "pid.h"
-
+#include <stdint.h>
 
 bool displayFlag = false;
 bool controllerFlag = false;
 bool buttonFlag = false;
-unsigned long systemTime = 0;
+static Task_t tasks[NUM_TASKS];
 
 void initKernelSysTick(void) {
     // Set up the period for the SysTick timer.  The SysTick timer period is
@@ -20,56 +20,60 @@ void initKernelSysTick(void) {
     SysTickEnable();
 }
 
-//void initKernel(void) {
-//
-//}
+/*
+ * Register a task in the kernel, lower index for higher priority
+ * @taskFunc pointer to a function to be called by task object
+ * @cycles the number of system ticks to wait before executing the task - 1 (cycles = 1 means every tick)
+ * @index the priority of the task, lower index means it will be run earlier
+ */
+void setKernelTask(void (*taskFunc)(void), uint32_t cycles, int16_t index) {
+    if (index < NUM_TASKS) {
+        tasks[index].taskFunc = taskFunc;
+        tasks[index].cycles = cycles;
+        tasks[index].currCycles = 0;
+        tasks[index].ready = true;
+    }
+}
+
+/*
+ * Update the current cycles and ready state of a task
+ */
+void updateTaskState(void) {
+    int16_t i = 0;
+    for (i=0; i < NUM_TASKS; i++) {
+        tasks[i].currCycles++;
+        if (tasks[i].currCycles == tasks[i].cycles) {
+            tasks[i].ready = true;
+            tasks[i].currCycles = 0;
+        }
+    }
+}
 
 //*****************************************************************************
 //
 // The interrupt handler for the for SysTick interrupt.
+// ADCProcessorTrigger must be called here rather than the kernel otherwise
+// our first sampled adc value will be 0
 //
 //*****************************************************************************
 void SysTickIntHandler(void)
 {
-    static uint32_t counter = 0;
-
+    updateTaskState();
     ADCProcessorTrigger(ADC0_BASE, 3);
-
-    if (counter % 1 == 0) {
-        controllerFlag = true;
-    }
-    if (counter % 10 == 0) {
-        displayFlag = true;
-    }
-    if (counter % 5 == 0) {
-        buttonFlag = true;
-    }
-
-    counter++;
-
 }
 
+/*
+ * Run the kernel, by checking if task is ready then executing it
+ */
 void runKernel(void) {
-
-    while (1)
-        {
-    //        updateButtons();
-            // Calculate and display the rounded mean of the buffer contents
-            if (controllerFlag) {
-                runController();
-                controllerFlag = 0;
-            }
-            if (displayFlag) {
-                updateDisplay();
-                sendSerialData();
-                displayFlag = 0;
-            }
-            if (buttonFlag) {
-                moveButtons();
-                buttonFlag = 0;
-            }
-
-    //        SysCtlDelay (SysCtlClockGet() / 200);  // Update display at ~ 2 Hz
-        }
-
+    while (1) {
+       int16_t i = 0;
+       for (i = 0; i < NUM_TASKS; i++) {
+           if (tasks[i].ready) {
+               tasks[i].ready = false;
+               tasks[i].taskFunc();
+               break;
+           }
+       }
+   }
 }

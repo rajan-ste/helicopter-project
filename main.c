@@ -37,9 +37,8 @@ uint32_t tailDuty = 0;
 int16_t min_Adc = 0;
 int16_t refVal = 0;
 bool firstRefCycle = true;
+bool refKnown = false;
 flightState_t flightState = LOCKED;
-
-
 
 //*****************************************************************************
 // Initialisation functions for the clock (incl. SysTick), ADC, display
@@ -49,6 +48,12 @@ void initClock (void)
     // Set the clock rate to 20 MHz
     SysCtlClockSet (SYSCTL_SYSDIV_10 | SYSCTL_USE_PLL | SYSCTL_OSC_MAIN |
                    SYSCTL_XTAL_16MHZ);
+}
+
+void sendSerialData()
+{
+    char *state = getStringHeliState(flightState);
+    sendData(motorDuty, tailDuty, setPoint, yawPos, yawSetPoint, state, meanVal);
 }
 
 void runController(void)
@@ -63,31 +68,39 @@ void runController(void)
 
 void updateDisplay()
 {
+    yawDeg = getYawDeg(yawPos);
     displayValues(getPercentage(meanVal), yawDeg, getYawInt(yawDeg), getYawDec(yawDeg));
 }
 
-int16_t ctr = 0;
-int16_t ctr2 = 0;
+//void adcSample(void)
+//{
+//    ADCProcessorTrigger(ADC0_BASE, 3);
+//}
 
 void moveButtons()
 {
+    // check for reset button press
+    updateSwitch2();
+    if (!getSwitchState2()) {
+        SysCtlReset();
+    }
     switch(flightState) {
     case FLYING :
         updateButtons();
-        updateSwitch();
+        updateSwitch1();
         if (checkButton(UP) == PUSHED) {
-            setPoint = increaseSetPoint(setPoint);
+            increaseSetPoint(&setPoint, 124);
         }
         if (checkButton(DOWN) == PUSHED) {
-            setPoint = decreaseSetPoint(setPoint);
+            decreaseSetPoint(&setPoint);
         }
         if (checkButton(RIGHT) == PUSHED) {
-            yawSetPoint = increaseYawSetPoint(yawSetPoint);
+            increaseYawSetPoint(&yawSetPoint);
         }
         if (checkButton(LEFT) == PUSHED) {
-            yawSetPoint = decreaseYawSetPoint(yawSetPoint);
+            decreaseYawSetPoint(&yawSetPoint);
         }
-        if (!getState()) {
+        if (!getSwitchState1()) {
             flightState = LANDING;
         }
         break;
@@ -96,56 +109,65 @@ void moveButtons()
         enablePWM();
         updateReference();
         if(firstRefCycle) {
-            setPoint = increaseSetPoint(setPoint);
-            yawSetPoint = increaseYawSetPointRef(yawSetPoint);
+            increaseSetPoint(&setPoint, 124);
+            increaseYawSetPointRef(&yawSetPoint);
             firstRefCycle = false;
         }
-        findReferenceYaw(&yawPos, &yawSetPoint, &refVal, &flightState);
+        if(!refKnown) {
+            findReferenceYaw(&yawPos, &yawSetPoint, &refVal, &flightState, &refKnown);
+        } else if (refKnown) {
+            goToRefYaw(&yawPos, &yawSetPoint, &refVal, &flightState);
+        }
         break;
 
     case LANDED :
-        updateSwitch();
-        if(getState()) {
+        updateSwitch1();
+        if(getSwitchState1()) {
             flightState = LAUNCHING;
+            firstRefCycle = true;
         }
         break;
 
     case LOCKED :
-        updateSwitch();
+        updateSwitch1();
         disablePWM();
-        if(getState() == 0) {
+        if(!getSwitchState1()) {
             flightState = LANDED;
         }
         break;
 
     case LANDING :
         yawSetPoint = refVal;
-        setPoint = 0;
-        if (meanVal == 0 && yawPos == refVal) {
+        if (yawPos == refVal) {
+            setPoint = min_Adc;
+        }
+        if (yawPos == refVal && (meanVal >= min_Adc || meanVal >= (min_Adc - 6))) {
             flightState = LANDED;
         }
     }
-
 }
 
-void init(void) {
+void init(void)
+{
     initClock ();
     initADC ();
     initButtons();
     initYaw ();
     initialisePWM();
     initialisePWMTAIL();
-    initSwitch();
+    initSwitch1();
+    initSwitch2();
     initSerial();
     initReference();
     initKernelSysTick();
-
-    // Enable interrupts to the processor.
     IntMasterEnable();
-    SysCtlDelay(SysCtlClockGet() / 5);
+    SysCtlDelay(SysCtlClockGet() / 5); // delay to populate buffer
+
     // get landed value
-    int16_t min_Adc = 0;
-    min_Adc = initAltitude();
+    initAltitude();
+    yawPos = getYawPos();
+    yawDeg = getYawDeg(yawPos);
+    min_Adc = getLandedAlt();
     initAdcLimits(min_Adc);
     setPoint = min_Adc;
     runController();
@@ -153,13 +175,13 @@ void init(void) {
     initDisplay ();
 }
 
-void sendSerialData() {
-    sendData(motorDuty, tailDuty, setPoint, yawPos, yawSetPoint, motorDuty * 0.8, flightState);
-}
-
-int main(void) {
-
+int main(void)
+{
     init();
-    runKernel();
 
+    setKernelTask(runController, KERNEL_FREQ_HZ / RUN_CONTROLLER_RATE, PRIO_0);
+    setKernelTask(moveButtons, KERNEL_FREQ_HZ / MOVE_BUTTONS_RATE, PRIO_1);
+    setKernelTask(updateDisplay, KERNEL_FREQ_HZ / UPDATE_DISPLAY_RATE, PRIO_2);
+    setKernelTask(sendSerialData, KERNEL_FREQ_HZ / SEND_DATA_RATE, PRIO_3);
+    runKernel();
 }

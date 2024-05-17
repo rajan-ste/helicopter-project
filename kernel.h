@@ -27,21 +27,40 @@
 #include "helistates.h"
 #include "kernel.h"
 
-#define KERNEL_FREQ_HZ 500
+#define KERNEL_FREQ_HZ 1000
+#define NUM_TASKS 4
+#define RUN_CONTROLLER_RATE 1000
+#define UPDATE_DISPLAY_RATE 100
+#define MOVE_BUTTONS_RATE 200
+#define SEND_DATA_RATE 4
 
+/*
+ * PRIO_0 is highest, priorities listed in descending order
+ */
+#define PRIO_0 0
+#define PRIO_1 1
+#define PRIO_2 2
+#define PRIO_3 3
 
-
-
+/*
+ * Task object
+ * @taskFunc the function to execute when the task is run
+ * @cycles the cycle rate to execute the task at
+ * @currCycles the number of cycles since the task was last executed
+ * @ready true if task is ready to execute
+ */
 typedef struct {
     void (*taskFunc)(void);
     uint32_t cycles;
-    uint32_t lastRun;
+    uint32_t currCycles;
     bool ready;
-}Task_t;
+} Task_t;
 
 void initKernelSysTick(void);
 void initKernel(void);
 void SysTickIntHandler(void);
 void runKernel(void);
+void setKernelTask(void (*taskFunc)(void), uint32_t cycles, int16_t index);
+void updateTaskState(void);
 
 #endif /*KERNEL_H_ */

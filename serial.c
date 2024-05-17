@@ -14,13 +14,12 @@
 #include "stdlib.h"
 #include "serial.h"
 #include "yaw.h"
-
+#include "altitude.h"
 
 //********************************************************
 // Globals to module
 //********************************************************
 char statusStr[MAX_STR_LEN + 1];
-
 
 void initSerial(void)
 {
@@ -47,14 +46,16 @@ void UARTSend (char *pucBuffer)
     }
 }
 
-
 //**********************************************************************
 // Transmit the current data values via serial
 //**********************************************************************
-void sendData(uint32_t motorDuty, uint32_t tailDuty, int16_t setPoint, int16_t yawPos, int16_t yawSetPoint, int16_t offset, int16_t state)
+void sendData(uint32_t motorDuty, uint32_t tailDuty, int16_t setPoint, int16_t yawPos,
+              int16_t yawSetPoint, char *state, int16_t meanVal)
 {
-
-    usprintf(statusStr, "M: %3d%% T: %3d%% Y: %3d YS: %3d SP: %3d O: %3d S: %3d \n\r", motorDuty, tailDuty, yawPos, yawSetPoint, setPoint, offset, state);
+    int32_t deg = getYawDeg(yawPos);
+    int32_t spdeg = getYawDeg(yawSetPoint);
+    usprintf(statusStr, "Motor D: %3d%% Tail D: %3d%% Yaw: %3d YawSP: %3d Alt: %3d%% AltSP: %3d%% State: %16s \n\r", motorDuty, tailDuty,
+             getYawInt(deg), getYawInt(spdeg), getPercentage(meanVal), getPercentage(setPoint), state);
     UARTSend (statusStr);
 
 }

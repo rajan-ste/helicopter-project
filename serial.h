@@ -19,7 +19,7 @@
 //********************************************************
 void initSerial(void);
 void UARTSend(char *pucBuffer);
-void sendData(uint32_t motorDuty, uint32_t tailDuty, int16_t setPoint, int16_t yawPos, int16_t yawSetPoint, int16_t offset, int16_t state);
-
+void sendData(uint32_t motorDuty, uint32_t tailDuty, int16_t setPoint, int16_t yawPos,
+              int16_t yawSetPoint, char *state, int16_t meanVal);
 
 #endif /* SERIAL_H_ */

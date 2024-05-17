@@ -7,8 +7,6 @@
 #include "driverlib/sysctl.h"
 #include "driverlib/debug.h"
 
-
-
 void initReference (void)
 {
     GPIOPinTypeGPIOInput (GPIO_PORTC_BASE, GPIO_PIN_4);
