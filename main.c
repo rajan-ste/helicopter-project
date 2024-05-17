@@ -52,7 +52,8 @@ void initClock (void)
 
 void sendSerialData()
 {
-    sendData(motorDuty, tailDuty, setPoint, yawPos, yawSetPoint, motorDuty * 0.8, flightState, refVal, meanVal);
+    char *state = getStringHeliState(flightState);
+    sendData(motorDuty, tailDuty, setPoint, yawPos, yawSetPoint, state, meanVal);
 }
 
 void runController(void)
@@ -67,6 +68,7 @@ void runController(void)
 
 void updateDisplay()
 {
+    yawDeg = getYawDeg(yawPos);
     displayValues(getPercentage(meanVal), yawDeg, getYawInt(yawDeg), getYawDec(yawDeg));
 }
 
@@ -87,7 +89,7 @@ void moveButtons()
         updateButtons();
         updateSwitch1();
         if (checkButton(UP) == PUSHED) {
-            increaseSetPoint(&setPoint);
+            increaseSetPoint(&setPoint, 124);
         }
         if (checkButton(DOWN) == PUSHED) {
             decreaseSetPoint(&setPoint);
@@ -107,7 +109,7 @@ void moveButtons()
         enablePWM();
         updateReference();
         if(firstRefCycle) {
-            increaseSetPoint(&setPoint);
+            increaseSetPoint(&setPoint, 124);
             increaseYawSetPointRef(&yawSetPoint);
             firstRefCycle = false;
         }
@@ -163,6 +165,8 @@ void init(void)
 
     // get landed value
     initAltitude();
+    yawPos = getYawPos();
+    yawDeg = getYawDeg(yawPos);
     min_Adc = getLandedAlt();
     initAdcLimits(min_Adc);
     setPoint = min_Adc;

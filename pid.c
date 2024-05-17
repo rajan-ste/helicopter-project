@@ -35,9 +35,9 @@ int16_t getmaxAdc()
  * to go under the max ADC value
  */
 
-void increaseSetPoint (int16_t *setPoint)
+void increaseSetPoint (int16_t *setPoint, int16_t step)
 {
-    *setPoint -= 124;
+    *setPoint -= step;
     if (*setPoint <= maxAdc) {
         *setPoint = maxAdc;
     }
@@ -127,8 +127,8 @@ int16_t yawController (int16_t setPoint, int16_t yawPos, int16_t offset)
         error = error;
     }
     int16_t P = YAW_KP * error;
-    if (P > 60) {
-        P = 60;
+    if (P > 45) {
+        P = 45;
     }
     int16_t dI = YAW_KI * error * DELTA_T;
     int16_t D = YAW_KD * (prev_yaw_reading - yawPos) / DELTA_T;
