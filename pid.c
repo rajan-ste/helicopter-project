@@ -51,7 +51,7 @@ void increaseSetPoint (int16_t *setPoint, int16_t step)
 
 void decreaseSetPoint (int16_t *setPoint)
 {
-    *setPoint += 124;
+    *setPoint += ALT_STEP;
     if (*setPoint >= minAdc) {
         *setPoint = minAdc;
     }
@@ -64,25 +64,25 @@ void decreaseSetPoint (int16_t *setPoint)
 
 void increaseYawSetPoint(int16_t *yawSetPoint)
 {
-    *yawSetPoint += 19;
-    if (*yawSetPoint >= 224) {
-        *yawSetPoint = -224 + (*yawSetPoint - 224);
+    *yawSetPoint += YAW_STEP;
+    if (*yawSetPoint >= WRAP_AROUND) {
+        *yawSetPoint = -WRAP_AROUND + (*yawSetPoint - WRAP_AROUND);
     }
 }
 
 void increaseYawSetPointRef(int16_t *yawSetPoint)
 {
-    *yawSetPoint += 19;
-    if (*yawSetPoint >= 224) {
-        *yawSetPoint = -224;
+    *yawSetPoint += YAW_STEP;
+    if (*yawSetPoint >= WRAP_AROUND) {
+        *yawSetPoint = -WRAP_AROUND;
     }
 }
 
 void decreaseYawSetPoint(int16_t *yawSetPoint)
 {
-    *yawSetPoint -= 19;
-    if (*yawSetPoint <= -224) {
-        *yawSetPoint = 224 + (*yawSetPoint + 224);
+    *yawSetPoint -= YAW_STEP;
+    if (*yawSetPoint <= -WRAP_AROUND) {
+        *yawSetPoint = WRAP_AROUND + (*yawSetPoint + WRAP_AROUND);
     }
 }
 
@@ -96,19 +96,19 @@ int16_t altController (int16_t setPoint, int16_t meanVal)
     int16_t dI = ALT_KI * error * DELTA_T;
     int16_t D = ALT_KD * (prev_sensor_reading - meanVal) / DELTA_T;
     int16_t total = P + (I + dI) + D;
-    if (total >= 30) {
-        total = 30;
+    if (total >= EFFORT_CAP) {
+        total = EFFORT_CAP;
     }
     int16_t control = GRAVITY - (total);
 
     I = (I + dI);
     prev_sensor_reading = meanVal;
 
-    if(control < 2) {
-        control = 2;
+    if(control < CONTROL_LOWER) {
+        control = CONTROL_LOWER;
     }
-    if(control > 98) {
-        control = 98;
+    if(control > CONTROL_UPPER) {
+        control = CONTROL_UPPER;
     }
 
     return control;
@@ -119,16 +119,16 @@ int16_t yawController (int16_t setPoint, int16_t yawPos, int16_t offset)
     static int16_t I = 0;
     static int16_t prev_yaw_reading = 0;
     int16_t error = setPoint - yawPos;
-    if (error < -224) {
-        error = 448 + error;
-    } else if (error > 224) {
-        error = -448 + error;
-    } else if ((error > -224) && (error < 224)) {
+    if (error < -WRAP_AROUND) {
+        error = FULL_ROTATION + error;
+    } else if (error > WRAP_AROUND) {
+        error = -FULL_ROTATION + error;
+    } else if ((error > -WRAP_AROUND) && (error < WRAP_AROUND)) {
         error = error;
     }
     int16_t P = YAW_KP * error;
-    if (P > 45) {
-        P = 45;
+    if (P > YAW_EFFORT_CAP) {
+        P = YAW_EFFORT_CAP;
     }
     int16_t dI = YAW_KI * error * DELTA_T;
     int16_t D = YAW_KD * (prev_yaw_reading - yawPos) / DELTA_T;
@@ -138,11 +138,11 @@ int16_t yawController (int16_t setPoint, int16_t yawPos, int16_t offset)
     I = (I + dI);
     prev_yaw_reading = yawPos;
 
-    if(control < 2) {
-        control = 2;
+    if(control < CONTROL_LOWER) {
+        control = CONTROL_LOWER;
     }
-    if(control > 98) {
-        control = 98;
+    if(control > CONTROL_UPPER) {
+        control = CONTROL_UPPER;
     }
 
     return control;

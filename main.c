@@ -24,6 +24,9 @@
 #include "helistates.h"
 #include "kernel.h"
 
+#define LANDING_RANGE 6
+#define PROPOGATE_BUFFER 5
+
 /******************************************************************************
  * GLOBALS
  *****************************************************************************/
@@ -89,7 +92,7 @@ void moveButtons()
         updateButtons();
         updateSwitch1();
         if (checkButton(UP) == PUSHED) {
-            increaseSetPoint(&setPoint, 124);
+            increaseSetPoint(&setPoint, ALT_STEP);
         }
         if (checkButton(DOWN) == PUSHED) {
             decreaseSetPoint(&setPoint);
@@ -109,7 +112,7 @@ void moveButtons()
         enablePWM();
         updateReference();
         if(firstRefCycle) {
-            increaseSetPoint(&setPoint, 124);
+            increaseSetPoint(&setPoint, ALT_STEP);
             increaseYawSetPointRef(&yawSetPoint);
             firstRefCycle = false;
         }
@@ -141,7 +144,7 @@ void moveButtons()
         if (yawPos == refVal) {
             setPoint = min_Adc;
         }
-        if (yawPos == refVal && (meanVal >= min_Adc || meanVal >= (min_Adc - 6))) {
+        if (yawPos == refVal && (meanVal >= min_Adc || meanVal >= (min_Adc - LANDING_RANGE))) {
             flightState = LANDED;
         }
     }
@@ -161,7 +164,7 @@ void init(void)
     initReference();
     initKernelSysTick();
     IntMasterEnable();
-    SysCtlDelay(SysCtlClockGet() / 5); // delay to populate buffer
+    SysCtlDelay(SysCtlClockGet() / PROPOGATE_BUFFER); // delay to populate buffer
 
     // get landed value
     initAltitude();

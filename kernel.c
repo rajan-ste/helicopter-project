@@ -2,9 +2,6 @@
 #include "pid.h"
 #include <stdint.h>
 
-bool displayFlag = false;
-bool controllerFlag = false;
-bool buttonFlag = false;
 static Task_t tasks[NUM_TASKS];
 
 void initKernelSysTick(void) {
