@@ -1,5 +1,5 @@
 # ENCE361 Helicopter 
-Embedded system for a Tiva C Series TM4C123G
+Embedded system program for a Tiva C Series TM4C123G
 
 ## Aim
 
